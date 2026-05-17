@@ -2,102 +2,176 @@ import { useState, useEffect, useRef } from 'react'
 import { ref, set, get, onValue, update, remove } from 'firebase/database'
 import { db } from './firebase.js'
 
-// ── Mots WTF ──────────────────────────────────────────────────────
-const WORD_PAIRS = [
-  ["RSA", "SMIC"], ["URSSAF", "CAF"], ["POLE EMPLOI", "MISSION LOCALE"],
-  ["HLM", "FOYER"], ["SÉCU", "MUTUELLE"], ["MAIRIE", "PRÉFECTURE"],
-  ["GENDARME", "FLIC"], ["TRIBUNAL", "COMMISSARIAT"], ["IMPÔTS", "TAXES"],
-  ["AMENDE", "CONTRAVENTION"], ["ASSISTANTE SOCIALE", "ÉDUCATEUR"],
-  ["CROUS", "RESTO U"], ["APL", "AIDE AU LOGEMENT"], ["CMU", "AME"],
-  ["AVOCAT", "NOTAIRE"], ["DAESH", "TALIBAN"], ["AL-QAÏDA", "BOKO HARAM"],
-  ["FEMEN", "MANIF POUR TOUS"], ["ANTIFA", "GILETS JAUNES"],
-  ["FRANC-MAÇON", "ILLUMINATI"], ["CIA", "NSA"], ["INTERPOL", "EUROPOL"],
-  ["KGB", "FSB"], ["KÉKÉ", "BEAUF"], ["RACAILLE", "VOYOU"],
-  ["CAILLERA", "LASCAR"], ["BOLOS", "BALTRINGUE"], ["OSEF", "BREF"],
-  ["WESH", "YO"], ["CHELOU", "ZARBI"], ["CRAMÉ", "GRILLÉ"],
-  ["TARÉ", "CINGLÉ"], ["MOULA", "BLÉ"], ["OSEILLE", "FRIC"],
-  ["THUNE", "POGNON"], ["WEED", "SHIT"], ["BEUH", "POLLEN"],
-  ["COCAÏNE", "SPEED"], ["KÉTA", "MDMA"], ["JOINT", "CIGARETTE"],
-  ["OVERDOSE", "SURDOSE"], ["SEVRAGE", "MANQUE"], ["METHADONE", "SUBUTEX"],
-  ["KEBAB", "TACOS"], ["MCDONALD", "QUICK"], ["KFC", "POPEYES"],
-  ["LIDL", "ALDI"], ["REDBULL", "MONSTER"], ["VODKA", "RHUM"],
-  ["RICARD", "PASTIS"], ["BITCOIN", "ETHEREUM"], ["TINDER", "BADOO"],
-  ["SNAPCHAT", "INSTAGRAM"], ["TIKTOK", "YOUTUBE"], ["NETFLIX", "DISNEY+"],
-  ["TORRENT", "STREAMING"], ["DARK WEB", "DEEP WEB"], ["VPN", "PROXY"],
-  ["HACKER", "PIRATE"], ["SCAMMER", "PHISHING"], ["MEME", "SHITPOST"],
-  ["SIMP", "DRAGUEUR"], ["ALIEN", "REPTILIEN"], ["COMPLOT", "CONSPIRATION"],
-  ["CHEMTRAIL", "SILLAGE D'AVION"], ["TERRE PLATE", "TERRE CREUSE"],
-  ["GITANE", "CLOPE SANS FILTRE"], ["CAMPING-CAR", "CARAVANE"],
-  ["BANLIEUE", "CITÉ"], ["PAPARAZZI", "STALKER"],
-  ["INFLUENCEUR", "YOUTUBEUR"], ["ONLYFANS", "MYMRC"],
-  ["ESCORT", "MAÎTRESSE"], ["DIVORCE", "SÉPARATION"],
-  ["GARDE À VUE", "MISE EN EXAMEN"], ["PRISON", "DÉTENTION PROVISOIRE"],
-  ["CASIER JUDICIAIRE", "FICHE S"], ["AK-47", "KALACHNIKOV"],
-  ["MOLOTOV", "GRENADE"], ["BATTE DE BASEBALL", "MARTEAU"],
-
-  // Dragon Ball / Anime
-  ["GOKU", "VEGETA"], ["NARUTO", "SASUKE"], ["LUFFY", "ZORO"],
-  ["DRAGON BALL", "ONE PIECE"], ["PICCOLO", "FREEZER"],
-  ["KAMEHAMEHA", "RASENGAN"], ["SUPER SAIYAN", "BANKAI"],
-  ["BLEACH", "FAIRY TAIL"], ["DEMON SLAYER", "JUJUTSU KAISEN"],
-  ["ATTAQUE DES TITANS", "FULLMETAL ALCHEMIST"], ["DEATH NOTE", "CODE GEASS"],
-  ["SASUKE", "ITACHI"], ["GOJO", "SUKUNA"], ["EREN", "LEVI"],
-
-  // Pop culture FR / Persos
-  ["OGGY", "JACK"], ["LES CAFARDS", "TOM ET JERRY"],
-  ["TOTALLY SPIES", "LES REALLY FANTASTIQUES"], ["SAMURAI JACK", "DEXTER"],
-  ["WINX", "BRATZ"], ["H2O", "MIRACULOUS"],
-  ["KAAMELOTT", "CAMÉRA CAFÉ"], ["OSS 117", "LES VISITEURS"],
-  ["ASTERIX", "TINTIN"], ["SPIROU", "LUCKY LUKE"],
-  ["MARSUPILAMI", "GASTON LAGAFFE"],
-
-  // Musique / Artistes
-  ["MICHAEL JACKSON", "PRINCE"], ["MADONNA", "BRITNEY SPEARS"],
-  ["EMINEM", "50 CENT"], ["TUPAC", "BIGGIE"],
-  ["BOOBA", "KAARIS"], ["PNL", "DAMSO"],
-  ["NEKFEU", "OXMO PUCCINO"], ["SCH", "JUL"],
-  ["ANGÈLE", "ALOÏSE SAUVAGE"], ["STROMAE", "ORELSAN"],
-  ["DAFT PUNK", "JUSTICE"], ["PHARRELL", "TIMBALAND"],
-  ["BEYONCÉ", "RIHANNA"], ["DRAKE", "KANYE WEST"],
-  ["TRAVIS SCOTT", "PLAYBOI CARTI"], ["FRANK OCEAN", "THE WEEKND"],
-
-  // Food / Marques FR wtf
-  ["TASTY", "BRUT"], ["CROUSTY", "PÉPITO"],
-  ["PRINCE", "GRANOLA"], ["MIKADO", "POCKY"],
-  ["KINDER BUENO", "KINDER MAXI"], ["BOUNTY", "TWIX"],
-  ["NUTELLA", "SPECULOOS"], ["CHARAL", "BIGARD"],
-  ["MAROILLES", "MUNSTER"], ["RACLETTE", "FONDUE"],
-  ["KEBAB GREC", "DÖNER"], ["POUTINE", "PIEROGI"],
-
-  // Jeux vidéo
-  ["MINECRAFT", "ROBLOX"], ["FORTNITE", "WARZONE"],
-  ["GTA", "RED DEAD"], ["LEAGUE OF LEGENDS", "DOTA 2"],
-  ["FIFA", "PES"], ["POKEMON", "DIGIMON"],
-  ["MARIO", "SONIC"], ["ZELDA", "DARK SOULS"],
-  ["AMONG US", "FALL GUYS"], ["CLASH ROYALE", "CLASH OF CLANS"],
-
-  // Séries / Films
-  ["BREAKING BAD", "NARCOS"], ["GAME OF THRONES", "VIKINGS"],
-  ["STRANGER THINGS", "DARK"], ["LA CASA DE PAPEL", "SQUID GAME"],
-  ["LUPIN", "ARSÈNE LUPIN"], ["PEAKY BLINDERS", "BOARDWALK EMPIRE"],
-  ["SCARFACE", "PARRAIN"], ["MATRIX", "INCEPTION"],
-  ["PULP FICTION", "RESERVOIR DOGS"], ["JOKER", "BATMAN"],
-
-  // Internet / Memes
-  ["SKIBIDI TOILET", "OHIO"], ["BASED", "CRINGE"],
-  ["RATIO", "L + BOZO"], ["NO CAP", "FR FR"],
-  ["SLAY", "PERIODT"], ["RIZZ", "DRIP"],
-  ["NPC", "BOT"], ["COPIUM", "HOPIUM"],
-  ["SIGMA", "ALPHA"], ["GIGACHAD", "CHAD"],
-  ["CAUGHT IN 4K", "EXPOSÉ"], ["DOWN BAD", "SIMPING"],
-
-  // Persos culte FR
-  ["JACQUIE ET MICHEL", "YOUPORN"],
-  ["NABILLA", "LOANA"], ["SECRET STORY", "LOFT STORY"],
-  ["CYRIL HANOUNA", "THIERRY ARDISSON"], ["JEAN-PAUL BELMONDO", "ALAIN DELON"],
-  ["COLUCHE", "DESPROGES"], ["GAD ELMALEH", "JAMEL"],
-  ["KYLIAN MBAPPÉ", "CRISTIANO RONALDO"], ["ZIDANE", "RONALDINHO"],
+// ── Thèmes ────────────────────────────────────────────────────────
+export const THEMES = [
+  {
+    id: 'all', name: 'TOUT MÉLANGÉ', emoji: '🎲',
+    pairs: [], // rempli dynamiquement en bas
+  },
+  {
+    id: 'admin', name: 'ADMIN & ÉTAT FR', emoji: '🏛️',
+    pairs: [
+      ["RSA", "SMIC"], ["URSSAF", "CAF"], ["POLE EMPLOI", "MISSION LOCALE"],
+      ["HLM", "FOYER"], ["SÉCU", "MUTUELLE"], ["MAIRIE", "PRÉFECTURE"],
+      ["GENDARME", "FLIC"], ["TRIBUNAL", "COMMISSARIAT"], ["IMPÔTS", "TAXES"],
+      ["AMENDE", "CONTRAVENTION"], ["ASSISTANTE SOCIALE", "ÉDUCATEUR"],
+      ["CROUS", "RESTO U"], ["APL", "AIDE AU LOGEMENT"], ["CMU", "AME"],
+      ["AVOCAT", "NOTAIRE"], ["SÉNAT", "ASSEMBLÉE NATIONALE"],
+      ["PRÉFET", "SOUS-PRÉFET"], ["GENDARMERIE", "COMMISSARIAT"],
+    ],
+  },
+  {
+    id: 'rue', name: 'ARGOT & RUE', emoji: '🗣️',
+    pairs: [
+      ["KÉKÉ", "BEAUF"], ["RACAILLE", "VOYOU"], ["CAILLERA", "LASCAR"],
+      ["BOLOS", "BALTRINGUE"], ["OSEF", "BREF"], ["WESH", "YO"],
+      ["CHELOU", "ZARBI"], ["CRAMÉ", "GRILLÉ"], ["TARÉ", "CINGLÉ"],
+      ["MOULA", "BLÉ"], ["OSEILLE", "FRIC"], ["THUNE", "POGNON"],
+      ["DARON", "VIEUX"], ["TESS", "MEUF"], ["FEUJ", "REBEU"],
+      ["LASCAR", "GAILLARD"], ["BALTRINGUE", "BOUFFON"],
+      ["FRÈRE", "REUF"], ["OINJ", "PÉTARD"], ["BÉDO", "SPLIFF"],
+    ],
+  },
+  {
+    id: 'substances', name: 'SUBSTANCES', emoji: '💊',
+    pairs: [
+      ["WEED", "SHIT"], ["BEUH", "POLLEN"], ["COCAÏNE", "SPEED"],
+      ["KÉTA", "MDMA"], ["JOINT", "CIGARETTE"], ["OVERDOSE", "SURDOSE"],
+      ["SEVRAGE", "MANQUE"], ["METHADONE", "SUBUTEX"],
+      ["CRACK", "FREE BASE"], ["LSD", "CHAMPIGNONS"],
+      ["CODÉINE", "LEAN"], ["HÉROÏNE", "MORPHINE"],
+    ],
+  },
+  {
+    id: 'complot', name: 'ORGAS & COMPLOT', emoji: '🕵️',
+    pairs: [
+      ["DAESH", "TALIBAN"], ["AL-QAÏDA", "BOKO HARAM"],
+      ["FEMEN", "MANIF POUR TOUS"], ["ANTIFA", "GILETS JAUNES"],
+      ["FRANC-MAÇON", "ILLUMINATI"], ["CIA", "NSA"],
+      ["INTERPOL", "EUROPOL"], ["KGB", "FSB"],
+      ["CHEMTRAIL", "SILLAGE D'AVION"], ["TERRE PLATE", "TERRE CREUSE"],
+      ["ALIEN", "REPTILIEN"], ["COMPLOT", "CONSPIRATION"],
+      ["FICHE S", "CASIER JUDICIAIRE"], ["GARDE À VUE", "MISE EN EXAMEN"],
+    ],
+  },
+  {
+    id: 'anime', name: 'ANIME & MANGA', emoji: '⚔️',
+    pairs: [
+      ["GOKU", "VEGETA"], ["NARUTO", "SASUKE"], ["LUFFY", "ZORO"],
+      ["DRAGON BALL", "ONE PIECE"], ["PICCOLO", "FREEZER"],
+      ["KAMEHAMEHA", "RASENGAN"], ["SUPER SAIYAN", "BANKAI"],
+      ["BLEACH", "FAIRY TAIL"], ["DEMON SLAYER", "JUJUTSU KAISEN"],
+      ["ATTAQUE DES TITANS", "FULLMETAL ALCHEMIST"],
+      ["DEATH NOTE", "CODE GEASS"], ["SASUKE", "ITACHI"],
+      ["GOJO", "SUKUNA"], ["EREN", "LEVI"],
+      ["NARUTO", "DRAGON BALL Z"], ["CONAN", "DÉTECTIVE CONAN"],
+      ["SAINT SEIYA", "DRAGON BALL"], ["BERSERK", "VINLAND SAGA"],
+    ],
+  },
+  {
+    id: 'persos', name: 'PERSOS & DESSINS ANIMÉS', emoji: '🎭',
+    pairs: [
+      ["OGGY", "JACK"], ["LES CAFARDS", "TOM ET JERRY"],
+      ["TOTALLY SPIES", "LES REALLY FANTASTIQUES"],
+      ["SAMURAI JACK", "DEXTER"], ["WINX", "BRATZ"],
+      ["H2O", "MIRACULOUS"], ["KAAMELOTT", "CAMÉRA CAFÉ"],
+      ["ASTERIX", "TINTIN"], ["SPIROU", "LUCKY LUKE"],
+      ["MARSUPILAMI", "GASTON LAGAFFE"], ["OSS 117", "LES VISITEURS"],
+      ["BATMAN", "SUPERMAN"], ["SPIDER-MAN", "IRON MAN"],
+      ["SHREK", "DONKEY"], ["BUZZ LIGHTYEAR", "WOODY"],
+      ["SIMPSONS", "FUTURAMA"], ["SOUTH PARK", "FAMILY GUY"],
+      ["SCOOBY-DOO", "YOGI L'OURS"],
+    ],
+  },
+  {
+    id: 'musique', name: 'MUSIQUE', emoji: '🎵',
+    pairs: [
+      ["MICHAEL JACKSON", "PRINCE"], ["MADONNA", "BRITNEY SPEARS"],
+      ["EMINEM", "50 CENT"], ["TUPAC", "BIGGIE"],
+      ["BOOBA", "KAARIS"], ["PNL", "DAMSO"],
+      ["NEKFEU", "OXMO PUCCINO"], ["SCH", "JUL"],
+      ["ANGÈLE", "ALOÏSE SAUVAGE"], ["STROMAE", "ORELSAN"],
+      ["DAFT PUNK", "JUSTICE"], ["PHARRELL", "TIMBALAND"],
+      ["BEYONCÉ", "RIHANNA"], ["DRAKE", "KANYE WEST"],
+      ["TRAVIS SCOTT", "PLAYBOI CARTI"], ["FRANK OCEAN", "THE WEEKND"],
+      ["AC/DC", "METALLICA"], ["NIRVANA", "PEARL JAM"],
+      ["THE BEATLES", "THE ROLLING STONES"], ["DAVID BOWIE", "FREDDIE MERCURY"],
+    ],
+  },
+  {
+    id: 'bouffe', name: 'BOUFFE & MARQUES', emoji: '🍔',
+    pairs: [
+      ["KEBAB", "TACOS"], ["MCDONALD", "QUICK"], ["KFC", "POPEYES"],
+      ["LIDL", "ALDI"], ["REDBULL", "MONSTER"], ["VODKA", "RHUM"],
+      ["RICARD", "PASTIS"], ["TASTY", "BRUT"], ["CROUSTY", "PÉPITO"],
+      ["PRINCE", "GRANOLA"], ["MIKADO", "POCKY"],
+      ["KINDER BUENO", "KINDER MAXI"], ["BOUNTY", "TWIX"],
+      ["NUTELLA", "SPECULOOS"], ["CHARAL", "BIGARD"],
+      ["MAROILLES", "MUNSTER"], ["RACLETTE", "FONDUE"],
+      ["KEBAB GREC", "DÖNER"], ["REBLOCHON", "CAMEMBERT"],
+      ["ROSÉ", "PIQUETTE"], ["CORONA", "DESPERADOS"],
+    ],
+  },
+  {
+    id: 'jeux', name: 'JEUX VIDÉO', emoji: '🎮',
+    pairs: [
+      ["MINECRAFT", "ROBLOX"], ["FORTNITE", "WARZONE"],
+      ["GTA", "RED DEAD"], ["LEAGUE OF LEGENDS", "DOTA 2"],
+      ["FIFA", "PES"], ["POKEMON", "DIGIMON"],
+      ["MARIO", "SONIC"], ["ZELDA", "DARK SOULS"],
+      ["AMONG US", "FALL GUYS"], ["CLASH ROYALE", "CLASH OF CLANS"],
+      ["CALL OF DUTY", "BATTLEFIELD"], ["APEX LEGENDS", "VALORANT"],
+      ["TERRARIA", "STARDEW VALLEY"], ["ELDEN RING", "DARK SOULS"],
+      ["CYBERPUNK", "WITCHER 3"],
+    ],
+  },
+  {
+    id: 'series', name: 'SÉRIES & FILMS', emoji: '🎬',
+    pairs: [
+      ["BREAKING BAD", "NARCOS"], ["GAME OF THRONES", "VIKINGS"],
+      ["STRANGER THINGS", "DARK"], ["LA CASA DE PAPEL", "SQUID GAME"],
+      ["LUPIN", "ARSÈNE LUPIN"], ["PEAKY BLINDERS", "BOARDWALK EMPIRE"],
+      ["SCARFACE", "LE PARRAIN"], ["MATRIX", "INCEPTION"],
+      ["PULP FICTION", "RESERVOIR DOGS"], ["JOKER", "BATMAN"],
+      ["AVENGERS", "JUSTICE LEAGUE"], ["STAR WARS", "STAR TREK"],
+      ["TITANIC", "AVATAR"], ["INTERSTELLAR", "GRAVITY"],
+      ["PARASITE", "BURNING"], ["DUNE", "BLADE RUNNER"],
+    ],
+  },
+  {
+    id: 'memes', name: 'MEMES & INTERNET', emoji: '😂',
+    pairs: [
+      ["SKIBIDI TOILET", "OHIO"], ["BASED", "CRINGE"],
+      ["RATIO", "L + BOZO"], ["NO CAP", "FR FR"],
+      ["SLAY", "PERIODT"], ["RIZZ", "DRIP"],
+      ["NPC", "BOT"], ["COPIUM", "HOPIUM"],
+      ["SIGMA", "ALPHA"], ["GIGACHAD", "CHAD"],
+      ["CAUGHT IN 4K", "EXPOSÉ"], ["DOWN BAD", "SIMPING"],
+      ["DELULU", "TOUCH GRASS"], ["UNDERSTOOD THE ASSIGNMENT", "ATE"],
+      ["MAIN CHARACTER", "SIDE CHARACTER"], ["RED FLAG", "GREEN FLAG"],
+      ["GHOSTING", "BENCHING"], ["SITUATIONSHIP", "TALKING STAGE"],
+    ],
+  },
+  {
+    id: 'celebs', name: 'CÉLÉBRITÉS', emoji: '⭐',
+    pairs: [
+      ["NABILLA", "LOANA"], ["SECRET STORY", "LOFT STORY"],
+      ["CYRIL HANOUNA", "THIERRY ARDISSON"],
+      ["JEAN-PAUL BELMONDO", "ALAIN DELON"],
+      ["COLUCHE", "DESPROGES"], ["GAD ELMALEH", "JAMEL"],
+      ["KYLIAN MBAPPÉ", "CRISTIANO RONALDO"],
+      ["ZIDANE", "RONALDINHO"], ["CANTONA", "PLATINI"],
+      ["JACQUELINE SAUVAGE", "CHRISTIANE TAUBIRA"],
+      ["NICOLAS SARKOZY", "FRANÇOIS HOLLANDE"],
+      ["MICHEL PLATINI", "ERIC CANTONA"],
+      ["SOPHIA LOREN", "BRIGITTE BARDOT"],
+      ["JOHNNY HALLYDAY", "CLAUDE FRANÇOIS"],
+    ],
+  },
 ]
+
+// Remplir "all" avec toutes les paires
+THEMES[0].pairs = THEMES.slice(1).flatMap(t => t.pairs)
 
 // ── Helpers ───────────────────────────────────────────────────────
 const UID_KEY = 'impostor_uid'
@@ -136,7 +210,6 @@ export default function App() {
   const [copied, setCopied] = useState(false)
   const unsubRef = useRef(null)
 
-  // Derived
   const players = room ? Object.entries(room.players || {}).map(([id, p]) => ({ id, ...p })) : []
   const amHost = room?.hostId === myId
   const isImpostor = room?.impostorId === myId
@@ -149,8 +222,7 @@ export default function App() {
     const unsub = onValue(ref(db, `rooms/${code}`), snap => {
       const data = snap.val()
       if (!data) {
-        setRoom(null)
-        setScreen('home')
+        setRoom(null); setScreen('home')
         localStorage.removeItem(ROOM_KEY)
         return
       }
@@ -160,7 +232,6 @@ export default function App() {
     localStorage.setItem(ROOM_KEY, code)
   }
 
-  // Auto-reconnect on page refresh
   useEffect(() => {
     const savedCode = localStorage.getItem(ROOM_KEY)
     if (!savedCode) return
@@ -175,18 +246,14 @@ export default function App() {
     }).catch(() => {})
   }, []) // eslint-disable-line
 
-  // Auto-advance phases (host only)
   useEffect(() => {
     if (!room || !amHost) return
-    if (room.status === 'playing' && allReady) {
+    if (room.status === 'playing' && allReady)
       update(ref(db, `rooms/${roomCode}`), { status: 'discuss' })
-    }
-    if (room.status === 'vote' && allVoted) {
+    if (room.status === 'vote' && allVoted)
       update(ref(db, `rooms/${roomCode}`), { status: 'result' })
-    }
   }, [room, amHost, allReady, allVoted, roomCode])
 
-  // Reset local word state when game restarts
   useEffect(() => {
     if (room?.status === 'playing') setWordShowing(false)
   }, [room?.status])
@@ -213,6 +280,7 @@ export default function App() {
 
       await set(ref(db, `rooms/${code}`), {
         hostId: myId, status: 'lobby', createdAt: Date.now(),
+        theme: 'all',
         normalWord: '', impostorWord: '', impostorId: '',
         players: { [myId]: { name: myName.trim(), ready: false, vote: null, joinedAt: Date.now() } }
       })
@@ -243,10 +311,16 @@ export default function App() {
     setLoading(false)
   }
 
+  async function setTheme(themeId) {
+    await update(ref(db, `rooms/${roomCode}`), { theme: themeId })
+  }
+
   async function startGame() {
     if (players.length < 3) { setError('3 joueurs minimum !'); return }
     setError('')
-    const pair = WORD_PAIRS[Math.floor(Math.random() * WORD_PAIRS.length)]
+    const themeId = room?.theme || 'all'
+    const theme = THEMES.find(t => t.id === themeId) || THEMES[0]
+    const pair = theme.pairs[Math.floor(Math.random() * theme.pairs.length)]
     const impostor = players[Math.floor(Math.random() * players.length)]
     const updates = {
       [`rooms/${roomCode}/normalWord`]: pair[0],
@@ -311,6 +385,7 @@ export default function App() {
   const mostVoted = voteResults[0]
   const impostorEliminated = mostVoted?.id === room?.impostorId
   const impostorPlayer = players.find(p => p.id === room?.impostorId)
+  const currentTheme = THEMES.find(t => t.id === (room?.theme || 'all')) || THEMES[0]
 
   return (
     <div className="app">
@@ -329,6 +404,7 @@ export default function App() {
               roomCode={roomCode} players={players} amHost={amHost} myId={myId}
               onStart={startGame} onLeave={leaveRoom} error={error}
               copied={copied} onCopy={handleCopy}
+              currentTheme={currentTheme} onSetTheme={setTheme}
             />
           )}
           {room.status === 'playing' && (
@@ -339,13 +415,11 @@ export default function App() {
               hasConfirmed={!!myPlayer?.ready} onConfirm={confirmWordSeen}
               readyCount={players.filter(p => p.ready).length}
               total={players.length}
+              themeName={currentTheme.name} themeEmoji={currentTheme.id === 'all' ? '🎲' : currentTheme.emoji}
             />
           )}
           {room.status === 'discuss' && (
-            <DiscussScreen
-              amHost={amHost} onStartVote={startVote}
-              players={players} onLeave={leaveRoom}
-            />
+            <DiscussScreen amHost={amHost} onStartVote={startVote} />
           )}
           {room.status === 'vote' && (
             <VoteScreen
@@ -422,7 +496,9 @@ function HomeScreen({ myName, setMyName, joinInput, setJoinInput, onCreate, onJo
 }
 
 // ── LobbyScreen ───────────────────────────────────────────────────
-function LobbyScreen({ roomCode, players, amHost, myId, onStart, onLeave, error, copied, onCopy }) {
+function LobbyScreen({ roomCode, players, amHost, myId, onStart, onLeave, error, copied, onCopy, currentTheme, onSetTheme }) {
+  const [showThemes, setShowThemes] = useState(false)
+
   return (
     <div className="screen lobby-screen">
       <h2 className="screen-title">SALLE D'ATTENTE</h2>
@@ -441,12 +517,34 @@ function LobbyScreen({ roomCode, players, amHost, myId, onStart, onLeave, error,
               <span className="player-dot" />
               <span>{p.name}</span>
               {p.id === myId && <span className="me-tag">moi</span>}
-              {p.isHost && <span className="host-tag">👑</span>}
             </div>
           ))}
         </div>
-        {players.length < 3 && (
-          <p className="waiting-hint">⏳ En attente... (3 min)</p>
+        {players.length < 3 && <p className="waiting-hint">⏳ En attente... (3 min)</p>}
+      </div>
+
+      {/* Sélection thème */}
+      <div className="card theme-card">
+        <label className="label">Thème</label>
+        <button className="theme-selected-btn" onClick={() => amHost && setShowThemes(v => !v)}>
+          <span className="theme-emoji">{currentTheme.emoji}</span>
+          <span className="theme-name">{currentTheme.name}</span>
+          {amHost && <span className="theme-arrow">{showThemes ? '▲' : '▼'}</span>}
+        </button>
+
+        {showThemes && amHost && (
+          <div className="themes-grid">
+            {THEMES.map(t => (
+              <button
+                key={t.id}
+                className={`theme-btn ${currentTheme.id === t.id ? 'theme-btn--active' : ''}`}
+                onClick={() => { onSetTheme(t.id); setShowThemes(false) }}
+              >
+                <span>{t.emoji}</span>
+                <span>{t.name}</span>
+              </button>
+            ))}
+          </div>
         )}
       </div>
 
@@ -469,7 +567,7 @@ function LobbyScreen({ roomCode, players, amHost, myId, onStart, onLeave, error,
 }
 
 // ── WordScreen ────────────────────────────────────────────────────
-function WordScreen({ myName, isImpostor, word, wordShowing, setWordShowing, hasConfirmed, onConfirm, readyCount, total }) {
+function WordScreen({ myName, isImpostor, word, wordShowing, setWordShowing, hasConfirmed, onConfirm, readyCount, total, themeName, themeEmoji }) {
   return (
     <div className="screen reveal-screen">
       <div className="progress-bar">
@@ -477,7 +575,7 @@ function WordScreen({ myName, isImpostor, word, wordShowing, setWordShowing, has
       </div>
 
       <p className="player-tag">👤 {myName}</p>
-      <h2 className="reveal-title">Ton mot secret</h2>
+      <p className="theme-tag">{themeEmoji} {themeName}</p>
 
       <div
         className={`word-card ${wordShowing ? 'word-card--shown' : ''}`}
@@ -520,9 +618,7 @@ function WordScreen({ myName, isImpostor, word, wordShowing, setWordShowing, has
       </div>
 
       {wordShowing && !hasConfirmed && (
-        <button className="btn-main" onClick={onConfirm}>
-          J'AI MÉMORISÉ ✅
-        </button>
+        <button className="btn-main" onClick={onConfirm}>J'AI MÉMORISÉ ✅</button>
       )}
 
       <p className="step-counter">{readyCount} / {total} prêts</p>
@@ -531,7 +627,7 @@ function WordScreen({ myName, isImpostor, word, wordShowing, setWordShowing, has
 }
 
 // ── DiscussScreen ─────────────────────────────────────────────────
-function DiscussScreen({ amHost, onStartVote, players, onLeave }) {
+function DiscussScreen({ amHost, onStartVote }) {
   return (
     <div className="screen discuss-screen">
       <div className="big-emoji">🗣️</div>
@@ -544,9 +640,7 @@ function DiscussScreen({ amHost, onStartVote, players, onLeave }) {
       <div className="tips">
         <p>💡 Ni trop vague ni trop précis !</p>
         <p>💡 L'imposteur a un mot <em>différent mais proche</em></p>
-        <p>💡 Faites plusieurs tours si vous voulez</p>
       </div>
-
       {amHost ? (
         <button className="btn-main btn-vote-start" onClick={onStartVote}>
           PASSER AU VOTE 🗳️
@@ -568,20 +662,17 @@ function VoteScreen({ myId, myVote, players, onVote, voteCount, total }) {
       <div className="progress-bar">
         <div className="progress-fill" style={{ width: `${(voteCount / total) * 100}%` }} />
       </div>
-
       <div className="big-emoji">🗳️</div>
       <h2 className="screen-title">VOTE</h2>
       <p className="vote-hint">Qui est l'imposteur ?</p>
 
       {myVote == null ? (
         <div className="vote-grid">
-          {players
-            .filter(p => p.id !== myId)
-            .map(p => (
-              <button key={p.id} className="vote-btn" onClick={() => onVote(p.id)}>
-                {p.name}
-              </button>
-            ))}
+          {players.filter(p => p.id !== myId).map(p => (
+            <button key={p.id} className="vote-btn" onClick={() => onVote(p.id)}>
+              {p.name}
+            </button>
+          ))}
         </div>
       ) : (
         <div className="voted-confirmation">
@@ -609,10 +700,7 @@ function ResultScreen({ voteResults, mostVoted, impostorEliminated, impostorPlay
           <div key={id} className="result-row">
             <span className="result-name">{name}</span>
             <div className="result-bar-wrap">
-              <div
-                className="result-bar"
-                style={{ width: `${Math.max(4, (received / (voteResults.length > 1 ? voteResults[0].received || 1 : 1)) * 100)}%` }}
-              />
+              <div className="result-bar" style={{ width: `${Math.max(4, (received / Math.max(voteResults[0]?.received || 1, 1)) * 100)}%` }} />
             </div>
             <span className="result-count">{received} vote{received > 1 ? 's' : ''}</span>
           </div>
@@ -632,9 +720,7 @@ function ResultScreen({ voteResults, mostVoted, impostorEliminated, impostorPlay
           <div className={`final-verdict ${impostorEliminated ? 'verdict-win' : 'verdict-lose'}`}>
             <div className="verdict-emoji">{impostorEliminated ? '🎉' : '😈'}</div>
             <h3>{impostorEliminated ? 'IMPOSTEUR ÉLIMINÉ !' : 'IMPOSTEUR GAGNE !'}</h3>
-            <p className="impostor-name">
-              L'imposteur était <strong>{impostorPlayer?.name ?? '?'}</strong>
-            </p>
+            <p className="impostor-name">L'imposteur était <strong>{impostorPlayer?.name ?? '?'}</strong></p>
             <div className="words-reveal">
               <span className="word-reveal-tag citizen-tag">Mot citoyen : <strong>{normalWord}</strong></span>
               <span className="word-reveal-tag impostor-tag">Mot imposteur : <strong>{impostorWord}</strong></span>
@@ -642,16 +728,13 @@ function ResultScreen({ voteResults, mostVoted, impostorEliminated, impostorPlay
           </div>
 
           {amHost ? (
-            <button className="btn-main btn-restart" onClick={onPlayAgain}>
-              REJOUER 🔄
-            </button>
+            <button className="btn-main btn-restart" onClick={onPlayAgain}>REJOUER 🔄</button>
           ) : (
             <div className="waiting-host">
               <div className="spinner" />
               <p>L'hôte peut relancer...</p>
             </div>
           )}
-
           <button className="btn-leave" onClick={onLeave}>Quitter</button>
         </div>
       )}
