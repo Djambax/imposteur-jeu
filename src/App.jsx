@@ -322,11 +322,14 @@ export default function App() {
     const theme = THEMES.find(t => t.id === themeId) || THEMES[0]
     const pair = theme.pairs[Math.floor(Math.random() * theme.pairs.length)]
     const impostor = players[Math.floor(Math.random() * players.length)]
+    // Ordre de parole aléatoire
+    const speakOrder = [...players].sort(() => Math.random() - 0.5).map(p => p.id)
     const updates = {
       [`rooms/${roomCode}/normalWord`]: pair[0],
       [`rooms/${roomCode}/impostorWord`]: pair[1],
       [`rooms/${roomCode}/impostorId`]: impostor.id,
       [`rooms/${roomCode}/status`]: 'playing',
+      [`rooms/${roomCode}/speakOrder`]: speakOrder,
     }
     players.forEach(p => {
       updates[`rooms/${roomCode}/players/${p.id}/ready`] = false
@@ -419,7 +422,11 @@ export default function App() {
             />
           )}
           {room.status === 'discuss' && (
-            <DiscussScreen amHost={amHost} onStartVote={startVote} />
+            <DiscussScreen
+              amHost={amHost} onStartVote={startVote}
+              speakOrder={room.speakOrder || []}
+              players={players}
+            />
           )}
           {room.status === 'vote' && (
             <VoteScreen
@@ -427,6 +434,10 @@ export default function App() {
               players={players} onVote={vote}
               voteCount={players.filter(p => p.vote != null).length}
               total={players.length}
+              liveVotes={players.reduce((acc, p) => {
+                if (p.vote) acc[p.vote] = (acc[p.vote] || 0) + 1
+                return acc
+              }, {})}
             />
           )}
           {room.status === 'result' && (
@@ -627,20 +638,35 @@ function WordScreen({ myName, isImpostor, word, wordShowing, setWordShowing, has
 }
 
 // ── DiscussScreen ─────────────────────────────────────────────────
-function DiscussScreen({ amHost, onStartVote }) {
+function DiscussScreen({ amHost, onStartVote, speakOrder, players }) {
+  const orderedPlayers = speakOrder
+    .map(id => players.find(p => p.id === id))
+    .filter(Boolean)
+
   return (
     <div className="screen discuss-screen">
       <div className="big-emoji">🗣️</div>
       <h2 className="screen-title">DISCUSSION</h2>
-      <div className="card">
-        <p>Chacun donne <strong>un indice</strong> sur son mot.</p>
-        <p>Essayez de repérer <strong>l'imposteur</strong> !</p>
-        <p>L'imposteur essaie de <strong>se fondre dans la masse</strong>.</p>
+
+      <div className="card speak-order-card">
+        <label className="label">Ordre de parole</label>
+        <div className="speak-list">
+          {orderedPlayers.map((p, i) => (
+            <div key={p.id} className="speak-item">
+              <span className="speak-number">{i + 1}</span>
+              <span className="speak-name">{p.name}</span>
+              <span className="speak-arrow">→</span>
+            </div>
+          ))}
+        </div>
+        <p className="speak-rule">Chacun donne <strong>1 indice</strong> sur son mot sans le dire !</p>
       </div>
+
       <div className="tips">
         <p>💡 Ni trop vague ni trop précis !</p>
         <p>💡 L'imposteur a un mot <em>différent mais proche</em></p>
       </div>
+
       {amHost ? (
         <button className="btn-main btn-vote-start" onClick={onStartVote}>
           PASSER AU VOTE 🗳️
@@ -656,17 +682,43 @@ function DiscussScreen({ amHost, onStartVote }) {
 }
 
 // ── VoteScreen ────────────────────────────────────────────────────
-function VoteScreen({ myId, myVote, players, onVote, voteCount, total }) {
+function VoteScreen({ myId, myVote, players, onVote, voteCount, total, liveVotes }) {
+  const maxVotes = Math.max(1, ...Object.values(liveVotes))
+
   return (
     <div className="screen vote-screen">
       <div className="progress-bar">
         <div className="progress-fill" style={{ width: `${(voteCount / total) * 100}%` }} />
       </div>
-      <div className="big-emoji">🗳️</div>
       <h2 className="screen-title">VOTE</h2>
-      <p className="vote-hint">Qui est l'imposteur ?</p>
+      <p className="vote-hint">{myVote == null ? 'Qui est l\'imposteur ?' : '✅ Vote envoyé !'}</p>
 
-      {myVote == null ? (
+      {/* Votes en live */}
+      <div className="card live-votes-card">
+        <label className="label">Votes en direct — {voteCount}/{total}</label>
+        <div className="live-votes-list">
+          {players.map(p => {
+            const count = liveVotes[p.id] || 0
+            const isMe = p.id === myId
+            const iVotedForThem = myVote === p.id
+            return (
+              <div key={p.id} className={`live-vote-row ${iVotedForThem ? 'live-vote-row--voted' : ''}`}>
+                <span className="live-vote-name">{p.name}{isMe ? ' (moi)' : ''}</span>
+                <div className="live-vote-bar-wrap">
+                  <div
+                    className="live-vote-bar"
+                    style={{ width: count > 0 ? `${(count / maxVotes) * 100}%` : '0%' }}
+                  />
+                </div>
+                <span className="live-vote-count">{count > 0 ? `${count} 🗳️` : '—'}</span>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Boutons de vote si pas encore voté */}
+      {myVote == null && (
         <div className="vote-grid">
           {players.filter(p => p.id !== myId).map(p => (
             <button key={p.id} className="vote-btn" onClick={() => onVote(p.id)}>
@@ -674,15 +726,7 @@ function VoteScreen({ myId, myVote, players, onVote, voteCount, total }) {
             </button>
           ))}
         </div>
-      ) : (
-        <div className="voted-confirmation">
-          <div className="check-big">✅</div>
-          <p>Vote envoyé !</p>
-          <p className="word-hint">En attente des autres...</p>
-        </div>
       )}
-
-      <p className="step-counter">{voteCount} / {total} ont voté</p>
     </div>
   )
 }

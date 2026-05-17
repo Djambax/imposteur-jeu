@@ -196,8 +196,42 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .discuss-screen .card { text-align: left; line-height: 2; font-size: 15px; }
 .tips { width: 100%; display: flex; flex-direction: column; gap: 8px; font-size: 13px; color: var(--muted); }
 
+/* ── DISCUSS ORDER ───────────────────────────────────── */
+.speak-order-card { text-align: left; }
+.speak-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.speak-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; background: var(--surface2); border-radius: 10px;
+}
+.speak-number {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent2), var(--accent3));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 900; flex-shrink: 0; color: white;
+}
+.speak-name { flex: 1; font-weight: 700; font-size: 15px; }
+.speak-arrow { color: var(--muted); font-size: 14px; }
+.speak-rule { font-size: 13px; color: var(--muted); margin-top: 4px; }
+
 /* ── VOTE ────────────────────────────────────────────── */
-.vote-hint { color: var(--muted); font-size: 14px; }
+.vote-hint { color: var(--muted); font-size: 14px; font-weight: 600; }
+.live-votes-card { text-align: left; }
+.live-votes-list { display: flex; flex-direction: column; gap: 8px; }
+.live-vote-row {
+  display: flex; align-items: center; gap: 8px; font-size: 13px;
+  padding: 8px 10px; border-radius: 10px; background: var(--surface2);
+  transition: background 0.2s;
+}
+.live-vote-row--voted { background: #ff3b6e18; border: 1px solid #ff3b6e44; }
+.live-vote-name { width: 90px; font-weight: 700; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.live-vote-bar-wrap { flex: 1; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
+.live-vote-bar {
+  height: 100%; background: linear-gradient(90deg, var(--accent2), var(--accent));
+  border-radius: 4px; transition: width 0.4s ease;
+  min-width: 0;
+}
+.live-vote-count { width: 40px; text-align: right; color: var(--muted); font-size: 12px; flex-shrink: 0; }
+
 .vote-grid { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .vote-btn {
   padding: 18px 12px; background: var(--surface); border: 2px solid var(--border);
